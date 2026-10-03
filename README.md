@@ -1,6 +1,6 @@
 # ⚡ Edge Decision System — Laya System 1 Demo
 
-> **IEEE Theory Conclave Demo** — Real-time edge AI decisions using the Laya open-source System 1 model + Mathematical Agent + Neuro-Symbolic Safety Guardrails.
+> Real-time edge AI decisions using the Laya open-source System 1 model + Mathematical Agent + Neuro-Symbolic Safety Guardrails.
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
@@ -157,5 +157,6 @@ Each scenario has **6 preset events** (30 total) ready for instant testing.
 
 ## 📜 License
 
-This demo is for educational purposes at the IEEE Theory Conclave.  
-Laya model is licensed under **Apache 2.0** by Convai Innovations.
+This demo is for educational purposes
+
+[Laya](https://github.com/NandhaKishorM/laya) model is licensed under **Apache 2.0** by Convai Innovations.
