@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Edge Entity — IEEE Demo</title>
+    <meta name="description" content="Mobile edge entity for sending sensor data to the edge AI server" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --bg: #060a14;
+            --bg-card: #111827;
+            --bg-card-alt: #1a2035;
+            --border: rgba(255,255,255,0.08);
+            --border-glow: rgba(129,140,248,0.25);
+            --text: #f1f5f9;
+            --text2: #94a3b8;
+            --text3: #64748b;
+            --accent: #818cf8;
+            --cyan: #22d3ee;
+            --emerald: #34d399;
+            --amber: #fbbf24;
+            --rose: #fb7185;
+            --radius: 16px;
+            --radius-sm: 12px;
+            --radius-xs: 8px;
+            --font: 'Inter', system-ui, sans-serif;
+            --mono: 'JetBrains Mono', monospace;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { height: 100%; }
+        body {
+            font-family: var(--font); background: var(--bg); color: var(--text);
+            min-height: 100%; padding: 0; overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Ambient glow */
+        .bg-gradient {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 320px 320px at 25% 15%, rgba(129,140,248,0.12), transparent),
+                radial-gradient(ellipse 280px 280px at 80% 85%, rgba(34,211,238,0.08), transparent);
+        }
+
+        /* Header */
+        .header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(6,10,20,0.92);
+            backdrop-filter: blur(16px);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .header-brand { display: flex; align-items: center; gap: 12px; }
+        .h-icon {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, #0ea5e9, #22d3ee);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; box-shadow: 0 4px 16px rgba(34,211,238,0.25);
+        }
+        .h-title { font-size: 16px; font-weight: 700; letter-spacing: -0.2px; }
+        .h-sub { font-size: 11px; color: var(--text3); }
+        .h-badge {
+            font-size: 11px; padding: 4px 10px; border-radius: 100px;
+            background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.25);
+            color: var(--emerald); font-weight: 600; display: flex; align-items: center; gap: 5px;
+        }
+        .h-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--emerald); }
+
+        .content { position: relative; z-index: 1; padding: 20px 16px 100px; }
+
+        /* Server URL Bar */
+        .server-bar {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 16px; margin-bottom: 10px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); font-size: 13px;
+        }
+        .server-bar label { color: var(--text3); font-weight: 500; white-space: nowrap; }
+        .server-bar input {
+            flex: 1; background: none; border: none; color: var(--cyan);
+            font-family: var(--mono); font-size: 13px; outline: none;
+        }
+        .server-bar .status-indicator {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--text3); transition: background 0.3s;
+        }
+        .server-bar .status-indicator.connected { background: var(--emerald); }
+        .server-bar .status-indicator.error { background: var(--rose); }
+
+        /* Device ID */
+        .device-bar {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 16px; margin-bottom: 18px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); font-size: 13px;
+        }
+        .device-bar label { color: var(--text3); font-weight: 500; white-space: nowrap; }
+        .device-bar input {
+            flex: 1; background: none; border: none; color: var(--cyan);
+            font-family: var(--mono); font-size: 13px; outline: none;
+        }
+
+        /* Section Label */
+        .section-label {
+            font-size: 11px; color: var(--text3); text-transform: uppercase;
+            letter-spacing: 1.5px; font-weight: 700; margin-bottom: 10px;
+            padding-left: 4px; display: flex; align-items: center; justify-content: space-between;
+        }
+
+        /* Scenario Selector */
+        .scenario-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+            margin-bottom: 20px;
+        }
+        .scenario-btn {
+            padding: 12px 6px; border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border);
+            background: var(--bg-card); cursor: pointer;
+            transition: all 0.25s ease; text-align: center;
+        }
+        .scenario-btn:active { transform: scale(0.95); }
+        .scenario-btn.active {
+            border-color: var(--accent);
+            background: rgba(129,140,248,0.12);
+            box-shadow: 0 0 16px rgba(129,140,248,0.2);
+        }
+        .scenario-btn .s-icon { font-size: 22px; margin-bottom: 4px; }
+        .scenario-btn .s-name { font-size: 11px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Preset Events */
+        .presets {
+            margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 6px;
+        }
+        .preset-chip {
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+            border-radius: 100px; font-size: 12px; color: var(--text2);
+            cursor: pointer; transition: all 0.2s; max-width: 100%;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .preset-chip:active { transform: scale(0.95); }
+        .preset-chip:hover, .preset-chip.active {
+            background: rgba(129,140,248,0.12);
+            border-color: rgba(129,140,248,0.3);
+            color: var(--text);
+        }
+
+        /* Text Area */
+        .state-input {
+            width: 100%; min-height: 90px; padding: 14px 16px;
+            background: var(--bg-card); border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm); color: var(--text);
+            font-family: var(--font); font-size: 14px; line-height: 1.5;
+            resize: vertical; outline: none; transition: border-color 0.2s;
+            margin-bottom: 16px;
+        }
+        .state-input:focus { border-color: var(--accent); }
+        .state-input::placeholder { color: var(--text3); }
+
+        /* Send Button */
+        .send-btn {
+            width: 100%; padding: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none; border-radius: var(--radius-sm);
+            color: #fff; font-size: 15px; font-weight: 700;
+            cursor: pointer; transition: all 0.25s;
+            box-shadow: 0 8px 24px rgba(102,126,234,0.25);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .send-btn:active { transform: scale(0.97); }
+        .send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .send-btn.success { background: linear-gradient(135deg, #10b981, #34d399); }
+        .send-btn.error { background: linear-gradient(135deg, #ef4444, #fb7185); }
+
+        /* ================= RESPONSE SECTION ================= */
+        .response-panel {
+            margin-top: 24px; display: none;
+        }
+        .response-panel.visible { display: block; animation: fadeSlideUp 0.4s ease-out; }
+        @keyframes fadeSlideUp {
+            0% { opacity: 0; transform: translateY(16px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .resp-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+        }
+
+        /* 1. HERO ACTION DISPLAY - PROMINENT */
+        .action-hero {
+            text-align: center; padding: 28px 20px 22px;
+            background: linear-gradient(135deg, rgba(129,140,248,0.15), rgba(34,211,238,0.08));
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+        .action-hero-badge {
+            display: inline-block; font-size: 10px; text-transform: uppercase;
+            letter-spacing: 2px; color: var(--cyan); font-weight: 800;
+            margin-bottom: 10px; padding: 3px 10px; border-radius: 100px;
+            background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.25);
+        }
+        .action-hero-value {
+            font-size: 32px; font-weight: 900; text-transform: uppercase;
+            letter-spacing: 0.5px; line-height: 1.15; margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffffff 10%, #22d3ee 80%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .action-hero-meta {
+            display: flex; align-items: center; justify-content: center; gap: 14px;
+            font-size: 12px; color: var(--text2);
+        }
+        .action-hero-conf {
+            background: rgba(52,211,153,0.12); padding: 4px 10px; border-radius: 6px;
+            color: var(--emerald); font-weight: 700; font-family: var(--mono);
+        }
+        .action-hero-latency {
+            font-family: var(--mono); font-size: 11px; color: var(--cyan);
+        }
+
+        /* 2. REASONING & MATH CALLOUT */
+        .reasoning-box {
+            padding: 14px 18px;
+            background: rgba(129,140,248,0.06);
+            border-bottom: 1px solid var(--border);
+            display: flex; gap: 10px; align-items: flex-start;
+        }
+        .reasoning-icon { font-size: 18px; line-height: 1.2; }
+        .reasoning-text { font-size: 12.5px; line-height: 1.5; color: var(--text); }
+        .reasoning-title { font-weight: 700; color: var(--accent); margin-bottom: 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .math-box {
+            padding: 12px 18px;
+            background: rgba(34,211,238,0.05);
+            border-bottom: 1px solid var(--border);
+            display: flex; gap: 10px; align-items: flex-start;
+        }
+        .math-icon { font-size: 16px; line-height: 1.2; }
+        .math-text { font-size: 12px; line-height: 1.5; color: var(--cyan); font-family: var(--mono); }
+
+        /* 3. STRUCTURED DETAILS LIST */
+        .details-header {
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0,0,0,0.2);
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1.2px; color: var(--text3);
+        }
+
+        .resp-body { padding: 8px 18px; }
+
+        .resp-item {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .resp-item:last-child { border-bottom: none; }
+        .resp-item-head {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 6px;
+        }
+        .resp-item-key {
+            font-size: 11px; color: var(--text3); text-transform: uppercase;
+            letter-spacing: 1px; font-weight: 600;
+        }
+        .resp-item-pill {
+            font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px;
+            background: rgba(255,255,255,0.06); text-transform: uppercase;
+        }
+        .pill-critical, .pill-emergency, .pill-severe, .pill-high {
+            background: rgba(251,113,133,0.18); color: var(--rose); border: 1px solid rgba(251,113,133,0.3);
+        }
+        .pill-warning, .pill-moderate, .pill-elevated, .pill-medium {
+            background: rgba(251,191,36,0.18); color: var(--amber); border: 1px solid rgba(251,191,36,0.3);
+        }
+        .pill-routine, .pill-normal, .pill-low, .pill-safe {
+            background: rgba(52,211,153,0.18); color: var(--emerald); border: 1px solid rgba(52,211,153,0.3);
+        }
+        .pill-yes {
+            background: rgba(251,113,133,0.18); color: var(--rose); border: 1px solid rgba(251,113,133,0.3);
+        }
+        .pill-no {
+            background: rgba(52,211,153,0.18); color: var(--emerald); border: 1px solid rgba(52,211,153,0.3);
+        }
+
+        .resp-item-conf {
+            font-size: 11px; color: var(--text3); margin-top: 4px;
+        }
+
+        /* Probability Bars */
+        .prob-bars { margin-top: 8px; }
+        .prob-row {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+        }
+        .prob-label { font-size: 11px; color: var(--text2); width: 110px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .prob-track {
+            flex: 1; height: 6px; background: rgba(255,255,255,0.05);
+            border-radius: 3px; overflow: hidden;
+        }
+        .prob-fill {
+            height: 100%; border-radius: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--cyan));
+            transition: width 0.5s ease-out;
+        }
+        .prob-fill.top {
+            background: linear-gradient(90deg, #34d399, #22d3ee);
+        }
+        .prob-val { font-family: var(--mono); font-size: 10px; color: var(--text2); width: 44px; text-align: right; }
+
+        /* Log */
+        .log-section { margin-top: 24px; }
+        .log-entry {
+            font-family: var(--mono); font-size: 11px; color: var(--text3);
+            padding: 8px 12px; margin-bottom: 4px;
+            background: rgba(255,255,255,0.02); border-radius: 6px;
+            border-left: 2px solid var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+
+    <header class="header">
+        <div class="header-brand">
+            <div class="h-icon">⚡</div>
+            <div>
+                <div class="h-title">Edge Entity</div>
+                <div class="h-sub">IEEE Theory Conclave Demo</div>
+            </div>
+        </div>
+        <div class="h-badge">
+            <span class="h-dot"></span>
+            <span>Edge Ready</span>
+        </div>
+    </header>
+
+    <div class="content">
+        <!-- Server URL -->
+        <div class="server-bar">
+            <label>Server:</label>
+            <input type="text" id="serverUrl" placeholder="http://192.168.x.x:8000" />
+            <div class="status-indicator" id="serverStatus"></div>
+        </div>
+
+        <!-- Device ID -->
+        <div class="device-bar">
+            <label>Device ID:</label>
+            <input type="text" id="deviceId" value="" placeholder="phone-001" />
+        </div>
+
+        <!-- Scenario Picker -->
+        <div class="section-label">Select Domain Scenario</div>
+        <div class="scenario-grid">
+            <div class="scenario-btn active" data-scenario="smart_home">
+                <div class="s-icon">🏠</div>
+                <div class="s-name">Home</div>
+            </div>
+            <div class="scenario-btn" data-scenario="industrial">
+                <div class="s-icon">🏭</div>
+                <div class="s-name">Industry</div>
+            </div>
+            <div class="scenario-btn" data-scenario="health">
+                <div class="s-icon">🏥</div>
+                <div class="s-name">Health</div>
+            </div>
+            <div class="scenario-btn" data-scenario="security">
+                <div class="s-icon">🔒</div>
+                <div class="s-name">Security</div>
+            </div>
+            <div class="scenario-btn" data-scenario="traffic">
+                <div class="s-icon">🚦</div>
+                <div class="s-name">Traffic</div>
+            </div>
+        </div>
+
+        <!-- Preset Events -->
+        <div class="section-label">
+            <span>Predefined Sensor Events</span>
+            <span style="font-size: 10px; color: var(--cyan); font-weight: normal;">Tap to test</span>
+        </div>
+        <div class="presets" id="presets"></div>
+
+        <!-- State Input -->
+        <div class="section-label">Sensor Reading / Event Description</div>
+        <textarea class="state-input" id="stateInput" placeholder="Describe sensor state or pick a preset above…"></textarea>
+
+        <!-- Send -->
+        <button class="send-btn" id="sendBtn">
+            <span>⚡</span>
+            <span id="sendBtnText">Transmit to Edge Server</span>
+        </button>
+
+        <!-- Response -->
+        <div class="response-panel" id="responsePanel">
+            <div class="section-label" style="margin-top: 24px;">Edge Decision Response</div>
+            <div class="resp-card">
+                <!-- 1. HERO ACTION BANNER (PROMINENT) -->
+                <div class="action-hero" id="actionHero">
+                    <div class="action-hero-badge">⚡ Recommended Action</div>
+                    <div class="action-hero-value" id="heroAction">—</div>
+                    <div class="action-hero-meta">
+                        <span class="action-hero-conf" id="heroConf">—</span>
+                        <span class="action-hero-latency" id="heroLatency">—</span>
+                    </div>
+                </div>
+
+                <!-- 2. REASONING & MATH BOXES -->
+                <div class="reasoning-box" id="reasoningBox" style="display:none;">
+                    <div class="reasoning-icon">💡</div>
+                    <div>
+                        <div class="reasoning-title">Decision Explanation</div>
+                        <div class="reasoning-text" id="reasoningText"></div>
+                    </div>
+                </div>
+                <div class="math-box" id="mathBox" style="display:none;">
+                    <div class="math-icon">📐</div>
+                    <div>
+                        <div class="math-text" id="mathText"></div>
+                    </div>
+                </div>
+
+                <!-- 3. DETAILED BREAKDOWN OF ALL ANSWERS -->
+                <div class="details-header">Structured Decision Breakdown</div>
+                <div class="resp-body" id="respBody"></div>
+            </div>
+        </div>
+
+        <!-- Log -->
+        <div class="log-section" id="logSection">
+            <div class="section-label" style="margin-top: 24px;">Edge Telemetry Log</div>
+        </div>
+    </div>
+
+    <script>
+        // --------- Predefined sensor data per scenario ---------
+        const PRESETS = {
+            smart_home: [
+                "Living room lights left on, no motion for 2 hours",
+                "Water leak detected under kitchen sink",
+                "Smoke sensor triggered in kitchen, no cooking scheduled",
+                "Temperature sensor reads 35°C, thermostat set to 22°C",
+                "Motion detected in living room at 2 AM, all residents are asleep",
+                "Front door opened while family is on vacation",
+            ],
+            industrial: [
+                "Conveyor belt motor vibration at 12mm/s, threshold is 8mm/s",
+                "Coolant temperature spiked to 95°C on CNC machine #3",
+                "Pressure drop of 40% in hydraulic line B",
+                "Assembly robot arm showing 2mm positional drift",
+                "Power consumption surged 300% on production line 4",
+                "Oil level critically low in compressor unit A7",
+            ],
+            health: [
+                "Patient heart rate 145 bpm, resting, blood pressure 180/110",
+                "Blood oxygen level dropped to 88%, patient is 72 years old",
+                "Continuous glucose monitor reading 320 mg/dL for type 2 diabetic",
+                "Patient temperature 39.8°C with complaint of chest pain",
+                "Elderly patient fall detected by wearable accelerometer",
+                "Irregular ECG rhythm detected during routine monitoring",
+            ],
+            security: [
+                "Unknown person detected at server room door at 11 PM, no badge scan",
+                "Multiple failed access attempts on restricted zone terminal",
+                "Perimeter fence vibration sensor triggered in sector 7",
+                "Unregistered vehicle parked in restricted area for 45 minutes",
+                "Employee badge used at two locations 500m apart within 2 minutes",
+                "Security camera feed obstructed with spray paint in parking area",
+            ],
+            traffic: [
+                "Sudden speed drop from 80 km/h to 0 km/h across 3 lanes on highway",
+                "Pedestrian detected crossing against red signal at busy intersection",
+                "Traffic volume 240% above normal on bridge during non-peak hours",
+                "Emergency vehicle approaching intersection from north at 90 km/h",
+                "Road surface temperature below freezing, rain detected",
+                "Wrong-way driver detected on highway exit ramp",
+            ],
+        };
+
+        // --------- State ---------
+        let selectedScenario = 'smart_home';
+        const serverUrlInput = document.getElementById('serverUrl');
+        const serverStatus = document.getElementById('serverStatus');
+        const deviceInput = document.getElementById('deviceId');
+        const stateInput = document.getElementById('stateInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const sendBtnText = document.getElementById('sendBtnText');
+        const responsePanel = document.getElementById('responsePanel');
+        const respBody = document.getElementById('respBody');
+        const presetsContainer = document.getElementById('presets');
+        const logSection = document.getElementById('logSection');
+        const heroAction = document.getElementById('heroAction');
+        const heroConf = document.getElementById('heroConf');
+        const heroLatency = document.getElementById('heroLatency');
+        const reasoningBox = document.getElementById('reasoningBox');
+        const reasoningText = document.getElementById('reasoningText');
+        const mathBox = document.getElementById('mathBox');
+        const mathText = document.getElementById('mathText');
+
+        // Auto-detect server URL: if served by edge server, use same origin; otherwise prompt
+        const currentOrigin = window.location.origin;
+        serverUrlInput.value = currentOrigin !== 'null' && !currentOrigin.startsWith('file:')
+            ? currentOrigin
+            : '';
+        if (serverUrlInput.value) {
+            serverStatus.classList.add('connected');
+        }
+
+        // Generate device ID
+        deviceInput.value = 'phone-' + Math.random().toString(36).substring(2, 6);
+
+        // --------- Scenario selection ---------
+        document.querySelectorAll('.scenario-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedScenario = btn.dataset.scenario;
+                renderPresets();
+            });
+        });
+
+        function renderPresets() {
+            const presets = PRESETS[selectedScenario] || [];
+            presetsContainer.innerHTML = presets.map((p, i) =>
+                `<span class="preset-chip ${i === 0 ? 'active' : ''}" data-idx="${i}">${p}</span>`
+            ).join('');
+            
+            // Set first preset by default
+            if (presets.length > 0) {
+                stateInput.value = presets[0];
+            }
+
+            presetsContainer.querySelectorAll('.preset-chip').forEach((chip, i) => {
+                chip.addEventListener('click', () => {
+                    presetsContainer.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    stateInput.value = presets[i];
+                    stateInput.focus();
+                });
+            });
+        }
+        renderPresets();
+
+        // --------- Get base URL ---------
+        function getBaseUrl() {
+            let url = serverUrlInput.value.trim();
+            if (!url) {
+                // Fallback: use current page origin (when served by edge server)
+                url = window.location.origin;
+            }
+            // Strip trailing slash
+            return url.replace(/\/$/, '');
+        }
+
+        // --------- Send request ---------
+        sendBtn.addEventListener('click', async () => {
+            const state = stateInput.value.trim();
+            if (!state) { stateInput.focus(); return; }
+
+            const baseUrl = getBaseUrl();
+            if (!baseUrl || baseUrl === 'null') {
+                alert('Please enter the Edge Server URL (e.g., http://192.168.1.42:8000)');
+                serverUrlInput.focus();
+                return;
+            }
+
+            sendBtn.disabled = true;
+            sendBtnText.textContent = 'Processing at Edge…';
+
+            const payload = {
+                device_id: deviceInput.value || 'unknown',
+                scenario: selectedScenario,
+                state_text: state,
+                metadata: { sent_at: new Date().toISOString() },
+            };
+
+            try {
+                const t0 = performance.now();
+                const resp = await fetch(`${baseUrl}/api/decide`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const roundTrip = (performance.now() - t0).toFixed(0);
+                const data = await resp.json();
+
+                if (!resp.ok) throw new Error(data.detail || 'Server error');
+
+                // Mark server as connected
+                serverStatus.classList.remove('error');
+                serverStatus.classList.add('connected');
+
+                // 1. Show hero action prominently
+                const actionKey = Object.keys(data.decisions).find(k =>
+                    ['action', 'triage', 'threat_type', 'recommendation'].includes(k)
+                ) || Object.keys(data.decisions)[0];
+                const actionVal = data.decisions[actionKey];
+
+                heroAction.textContent = actionVal.label || actionVal.value || actionVal;
+                heroConf.textContent = actionVal.confidence
+                    ? `${(actionVal.confidence * 100).toFixed(1)}% Confidence`
+                    : '100% Confidence';
+                heroLatency.textContent = `⚡ ${data.latency_ms}ms Edge Latency (${roundTrip}ms RTT)`;
+
+                // 2. Show reasoning & math callouts
+                if (data.reasoning) {
+                    reasoningText.textContent = data.reasoning;
+                    reasoningBox.style.display = 'flex';
+                } else {
+                    reasoningBox.style.display = 'none';
+                }
+
+                if (data.math_analysis) {
+                    mathText.textContent = data.math_analysis;
+                    mathBox.style.display = 'flex';
+                } else {
+                    mathBox.style.display = 'none';
+                }
+
+                // 3. Render all structured details right below
+                renderDecisions(data.decisions, actionKey);
+                responsePanel.classList.add('visible');
+
+                // Success button state
+                sendBtn.classList.add('success');
+                sendBtnText.textContent = '✅ Decision Computed';
+                addLog(`✅ [${data.scenario}] ${actionVal.label || actionVal.value} · ${data.latency_ms}ms`);
+
+            } catch (err) {
+                serverStatus.classList.remove('connected');
+                serverStatus.classList.add('error');
+                sendBtn.classList.add('error');
+                sendBtnText.textContent = '❌ ' + err.message;
+                addLog(`❌ Error: ${err.message}`);
+            }
+
+            setTimeout(() => {
+                sendBtn.disabled = false;
+                sendBtn.classList.remove('success', 'error');
+                sendBtnText.textContent = 'Transmit to Edge Server';
+            }, 1200);
+        });
+
+        function getPillClass(val) {
+            const v = String(val).toLowerCase();
+            if (['critical', 'emergency', 'severe', 'high', 'yes'].includes(v)) return 'pill-critical';
+            if (['warning', 'moderate', 'elevated', 'medium'].includes(v)) return 'pill-warning';
+            if (['routine', 'normal', 'low', 'safe', 'no'].includes(v)) return 'pill-routine';
+            return '';
+        }
+
+        function renderDecisions(decisions, primaryKey) {
+            let html = '';
+            for (const [key, val] of Object.entries(decisions)) {
+                const label = val.label || val.value || val;
+                const conf = val.confidence ? (val.confidence * 100).toFixed(1) + '%' : '';
+                const pillCls = getPillClass(label);
+
+                html += `<div class="resp-item">
+                    <div class="resp-item-head">
+                        <span class="resp-item-key">${key.replace('_', ' ')}:</span>
+                        <span class="resp-item-pill ${pillCls}">${label}</span>
+                    </div>`;
+
+                if (conf) {
+                    html += `<div class="resp-item-conf">Confidence Score: ${conf}</div>`;
+                }
+
+                // Probability distribution bars
+                if (val.probabilities && Object.keys(val.probabilities).length > 0) {
+                    html += '<div class="prob-bars">';
+                    const sorted = Object.entries(val.probabilities).sort((a, b) => b[1] - a[1]);
+                    for (const [pKey, pVal] of sorted) {
+                        const pct = (pVal * 100).toFixed(1);
+                        const isTop = (pKey.toLowerCase() === String(label).toLowerCase());
+                        html += `<div class="prob-row">
+                            <span class="prob-label" title="${pKey}">${pKey}</span>
+                            <div class="prob-track">
+                                <div class="prob-fill ${isTop ? 'top' : ''}" style="width:${pct}%"></div>
+                            </div>
+                            <span class="prob-val">${pct}%</span>
+                        </div>`;
+                    }
+                    html += '</div>';
+                }
+                html += '</div>';
+            }
+            respBody.innerHTML = html;
+        }
+
+        function addLog(text) {
+            const el = document.createElement('div');
+            el.className = 'log-entry';
+            el.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+            logSection.appendChild(el);
+            while (logSection.children.length > 15) logSection.children[1].remove();
+        }
+    </script>
+</body>
+</html>
